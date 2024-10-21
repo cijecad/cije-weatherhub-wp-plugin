@@ -11,13 +11,6 @@ if (!defined('ABSPATH')) exit;
 
 if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
 
-    /**
-     * Main Cije_Weather_Hub_Wp_Plugin Class.
-     *
-     * @package     WEATHERHUB
-     * @subpackage  Classes/Cije_Weather_Hub_Wp_Plugin
-     * @since       1.0.0
-     */
     final class Cije_Weather_Hub_Wp_Plugin {
 
         private static $instance;
@@ -62,12 +55,14 @@ if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
             include_once(plugin_dir_path(__FILE__) . 'core/fetch-latest-weather-data.php');
             include_once(plugin_dir_path(__FILE__) . 'core/weather_graph_shortcode.php');
             include_once(plugin_dir_path(__FILE__) . 'core/register-station.php');
+            include_once(plugin_dir_path(__FILE__) . 'core/weather_map_shortcode.php'); // Add this line
         }
 
         private function base_hooks() {
             add_action('plugins_loaded', array(self::$instance, 'load_textdomain'));
             add_action('wp_enqueue_scripts', array(self::$instance, 'enqueue_weather_hub_scripts'));
             register_activation_hook(__FILE__, array(self::$instance, 'weather_hub_create_tables'));
+            add_shortcode('weather_map', array($this, 'render_weather_map')); // Add this line
         }
 
         public function load_textdomain() {
@@ -75,8 +70,12 @@ if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
         }
 
         public function enqueue_weather_hub_scripts() {
-            wp_enqueue_script('weather-hub-js', plugins_url('/core/weather-hub.js', __FILE__), array('jquery'), null, true);
+            wp_enqueue_script('weather-hub-js', plugins_url('/core/includes/assets/js/weather-hub.js', __FILE__), array('jquery'), null, true);
             wp_localize_script('weather-hub-js', 'weatherHubSettings', array('ajax_url' => admin_url('admin-ajax.php')));
+        
+            // Add these lines to include Leaflet
+            wp_enqueue_script('leaflet', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), null, true);
+            wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), null);
         }
 
         public function weather_hub_create_tables() {
@@ -110,6 +109,39 @@ if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             dbDelta($stations_sql);
             dbDelta($data_sql);
+        }
+
+        public function render_weather_map() {
+            ob_start();
+            ?>
+            <div id="weather-map" style="height: 500px;"></div>
+            <script>
+            jQuery(document).ready(function($) {
+                var map = L.map('weather-map').setView([0, 0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                $.ajax({
+                    url: weatherHubSettings.ajax_url,
+                    method: 'POST',
+                    data: {
+                        action: 'fetch_latest_weather_data'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $.each(response.data, function(index, station) {
+                                L.marker([station.latitude, station.longitude])
+                                    .addTo(map)
+                                    .bindPopup('<b>' + station.station_name + '</b><br>Temperature: ' + station.temperature + '°C<br>Humidity: ' + station.humidity + '%');
+                            });
+                        }
+                    }
+                });
+            });
+            </script>
+            <?php
+            return ob_get_clean();
         }
     }
 
