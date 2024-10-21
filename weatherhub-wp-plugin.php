@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: The CIJE Weather Hub Plugin
+Plugin Name: The CIJE Weather Hub Wordpress Plugin
 Description: A plugin to register and display weather station data from schools.
 Version: 1.0
 Author: Your Name
