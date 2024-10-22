@@ -10,7 +10,7 @@ function register_station_shortcode($atts) {
     $captcha_answer = $num1 + $num2;
 
     // Enqueue the JavaScript file
-    wp_enqueue_script('register-station-js', plugins_url('/assets/js/register-station.js', __FILE__), array('jquery'), null, true);
+    wp_enqueue_script('register-station-js', plugins_url('/core/includes/assets/js/register-station.js', __FILE__), array('jquery'), null, true);
 
     // Localize script to pass AJAX URL and other settings
     wp_localize_script('register-station-js', 'registerStationSettings', array(
@@ -63,16 +63,6 @@ function handle_register_station() {
     $email = sanitize_email($_POST['email']);
     $captcha = sanitize_text_field($_POST['captcha']);
     $captcha_answer = sanitize_text_field($_POST['captcha_answer']);
-
-    // Debugging statements
-    error_log('Station Name: ' . $station_name);
-    error_log('School: ' . $school);
-    error_log('Zip Code: ' . $zip_code);
-    error_log('Latitude: ' . $latitude);
-    error_log('Longitude: ' . $longitude);
-    error_log('Email: ' . $email);
-    error_log('Captcha: ' . $captcha);
-    error_log('Captcha Answer: ' . $captcha_answer);
 
     // Verify CAPTCHA
     if ($captcha != $captcha_answer) {
