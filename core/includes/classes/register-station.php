@@ -13,31 +13,32 @@ function register_station_shortcode($atts) {
     ob_start();
     ?>
     <form id="register-station-form" style="display: flex; flex-direction: column; max-width: 400px;">
-        <label for="station-name">Station Name:</label>
+        <label for="station-name">Station Name: <span style="color: red;">*</span></label>
         <input type="text" id="station-name" name="station_name" required>
 
-        <label for="school">School:</label>
+        <label for="school">School: <span style="color: red;">*</span></label>
         <input type="text" id="school" name="school" required>
 
-        <label for="zip-code">Zip Code:</label>
+        <label for="zip-code">Zip Code: <span style="color: red;">*</span></label>
         <input type="text" id="zip-code" name="zip_code" required>
 
         <label for="latitude">Latitude:</label>
-        <input type="text" id="latitude" name="latitude" required>
+        <input type="text" id="latitude" name="latitude">
 
         <label for="longitude">Longitude:</label>
-        <input type="text" id="longitude" name="longitude" required>
+        <input type="text" id="longitude" name="longitude">
 
-        <label for="email">Email:</label>
+        <label for="email">Email: <span style="color: red;">*</span></label>
         <input type="email" id="email" name="email" required>
 
-        <label for="captcha">What is <?php echo $captcha_question; ?></label>
+        <label for="captcha">What is <?php echo $captcha_question; ?> <span style="color: red;">*</span></label>
         <input type="text" id="captcha" name="captcha" required>
         <input type="hidden" id="captcha_answer" name="captcha_answer" value="<?php echo $captcha_answer; ?>">
 
         <button type="submit">Register Station</button>
     </form>
     <div id="registration-result"></div>
+    <p style="color: red;">* Required field</p>
     <script>
         jQuery(document).ready(function($) {
             $('#register-station-form').on('submit', function(e) {
