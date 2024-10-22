@@ -111,6 +111,7 @@ if (!class_exists('Cije_Weather_Hub')) :
 
         public function enqueue_weather_hub_scripts() {
             wp_enqueue_script('weather-map-js', plugins_url('/includes/assets/js/weather-map.js', __FILE__), array('jquery', 'leaflet'), null, true);
+            wp_enqueue_script('register-station-js', plugins_url('/includes/assets/js/register-station.js', __FILE__), array('jquery'), null, true);
         }
 
         // Register shortcodes
