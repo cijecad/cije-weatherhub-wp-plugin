@@ -9,6 +9,14 @@ function register_station_shortcode($atts) {
     $captcha_question = "$num1 + $num2 = ?";
     $captcha_answer = $num1 + $num2;
 
+    // Enqueue the JavaScript file
+    wp_enqueue_script('register-station-js', plugins_url('/assets/js/register-station.js', __FILE__), array('jquery'), null, true);
+
+    // Localize script to pass AJAX URL and other settings
+    wp_localize_script('register-station-js', 'registerStationSettings', array(
+        'ajax_url' => admin_url('admin-ajax.php')
+    ));
+
     // Output the HTML for the register station form
     ob_start();
     ?>
@@ -39,30 +47,6 @@ function register_station_shortcode($atts) {
     </form>
     <div id="registration-result"></div>
     <p style="color: red;">* Required field</p>
-    <script>
-        jQuery(document).ready(function($) {
-            $('#register-station-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = $(this).serialize();
-                $.ajax({
-                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
-                    type: 'POST',
-                    data: formData + '&action=register_station',
-                    success: function(response) {
-                        if (response.success) {
-                            $('#registration-result').html('<p style="color: green;">' + response.data.message + '</p>');
-                            $('#register-station-form')[0].reset();
-                        } else {
-                            $('#registration-result').html('<p style="color: red;">' + response.data.message + '</p>');
-                        }
-                    },
-                    error: function() {
-                        $('#registration-result').html('<p style="color: red;">An error occurred. Please try again.</p>');
-                    }
-                });
-            });
-        });
-    </script>
     <?php
     return ob_get_clean();
 }
@@ -96,7 +80,7 @@ function handle_register_station() {
     $passkey = wp_generate_password(6, false);
 
     // Insert the new station into the database
-    $wpdb->insert($table_name, array(
+    $inserted = $wpdb->insert($table_name, array(
         'station_name' => $station_name,
         'school' => $school,
         'zip_code' => $zip_code,
@@ -105,6 +89,10 @@ function handle_register_station() {
         'email' => $email,
         'passkey' => $passkey
     ));
+
+    if ($inserted === false) {
+        wp_send_json_error(array('message' => 'Failed to register station.'));
+    }
 
     // Get the station_id of the newly inserted station
     $station_id = $wpdb->insert_id;
