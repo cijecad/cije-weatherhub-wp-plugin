@@ -51,6 +51,7 @@ function register_station_shortcode($atts) {
                     success: function(response) {
                         if (response.success) {
                             $('#registration-result').html('<p style="color: green;">' + response.data.message + '</p>');
+                            $('#register-station-form')[0].reset();
                         } else {
                             $('#registration-result').html('<p style="color: red;">' + response.data.message + '</p>');
                         }
