@@ -34,25 +34,22 @@ jQuery(document).ready(function($) {
                         marker.bindPopup(`
                             <strong>Station Name:</strong> ${station.station_name}<br>
                             <strong>Station ID:</strong> ${station.station_id}<br>
-                            <strong>Temperature:</strong> ${station.temperature} C<br>
+                            <strong>School:</strong> ${station.school}<br>
+                            <strong>Temperature:</strong> ${station.temperature} °C<br>
                             <strong>Humidity:</strong> ${station.humidity} %<br>
                             <strong>Pressure:</strong> ${station.pressure} hPa<br>
+                            <strong>Precipitation:</strong> ${station.precipitation} mm<br>
                             <strong>Wind Speed:</strong> ${station.wind_speed} m/s<br>
-                            <strong>DateTime:</strong> ${station.datetime}<br>
                         `);
-                    } else {
-                        // Log if latitude or longitude is missing
-                        console.warn(`Missing latitude/longitude for station: ${station.station_name} (ID: ${station.station_id})`);
                     }
                 });
             },
-            error: function(error) {
-                // Log any errors that occur during the AJAX request
-                console.error('Error fetching weather data:', error);
+            error: function(xhr, status, error) {
+                console.error("AJAX error:", status, error);
             }
         });
     }
 
-    // Fetch weather data when the page loads
+    // Fetch weather data when the document is ready
     fetchWeatherData();
 });

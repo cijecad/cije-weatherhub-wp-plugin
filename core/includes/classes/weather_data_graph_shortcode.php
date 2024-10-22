@@ -1,28 +1,26 @@
 <?php
-// Function to generate shortcode for line graph with filters
-function weather_graph_shortcode() {
-    // Enqueue necessary scripts and styles for graph
-    wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array('jquery'), null, true);
-    wp_enqueue_script('weather-graph-js', plugins_url('/weather-graph.js', __FILE__), array('jquery', 'chart-js'), null, true);
-
-    // Output HTML for dropdowns and canvas
+// Function to output the weather graph shortcode
+function weather_graph_shortcode($atts) {
     ob_start();
     ?>
-    <div class="weather-graph-filter">
-        <label for="weather-station">Select Weather Station(s):</label>
-        <select id="weather-station" multiple></select>
-        <br>
-        <label for="y-axis-measure">Select Y Axis Measure:</label>
+    <div>
+        <label for="weather-station">Select Weather Station:</label>
+        <select id="weather-station">
+            <!-- Options will be populated dynamically -->
+        </select>
+
+        <label for="y-axis-measure">Select Y-Axis Measure:</label>
         <select id="y-axis-measure">
             <option value="temperature">Temperature</option>
             <option value="humidity">Humidity</option>
             <option value="pressure">Pressure</option>
             <option value="wind_speed">Wind Speed</option>
+            <option value="precipitation">Precipitation</option>
         </select>
-        <br>
-        <label for="x-axis-time">Select Time Period:</label>
+
+        <label for="x-axis-time">Select X-Axis Time:</label>
         <select id="x-axis-time">
-            <option value="day">Last Day</option>
+            <option value="24_hour">24 Hour</option>
             <option value="week">Last Week</option>
             <option value="month">Last Month</option>
             <option value="year">Last Year</option>
@@ -32,14 +30,6 @@ function weather_graph_shortcode() {
     <?php
     return ob_get_clean();
 }
-add_shortcode('weather_graph', 'weather_graph_shortcode');
-
-// Enqueue JavaScript for processing the graph data and rendering the chart
-function enqueue_weather_graph_scripts() {
-    wp_enqueue_script('weather-graph-handler', plugins_url('/weather-graph-handler.js', __FILE__), array('jquery', 'chart-js'), null, true);
-    wp_localize_script('weather-graph-handler', 'weatherGraphSettings', array('ajax_url' => admin_url('admin-ajax.php')));
-}
-add_action('wp_enqueue_scripts', 'enqueue_weather_graph_scripts');
 
 // Function to fetch weather data for graph
 function fetch_weather_graph_data() {
@@ -67,31 +57,33 @@ function fetch_weather_graph_data() {
             break;
     }
 
-    // Prepare the SQL query to get weather data
-    $data_table = $wpdb->prefix . 'weather_data';
-    $station_condition = count($station_ids) > 0 ? "AND station_id IN ('" . implode("','", $station_ids) . "')" : '';
-
-    $query = "
-        SELECT station_id, $y_axis_measure, datetime
-        FROM $data_table
-        WHERE 1=1
+    // Fetch data from the database
+    // This is a placeholder query, you need to implement the actual data fetching logic
+    $query = $wpdb->prepare("
+        SELECT datetime, $y_axis_measure
+        FROM {$wpdb->prefix}weather_data
+        WHERE station_id IN (" . implode(',', array_fill(0, count($station_ids), '%d')) . ")
         $time_condition
-        $station_condition
         ORDER BY datetime ASC
-    ";
+    ", $station_ids);
 
     $results = $wpdb->get_results($query);
 
-    if ($results) {
-        wp_send_json_success($results);
-    } else {
-        wp_send_json_error('No data found');
+    // Prepare data for the response
+    $data = array(
+        'labels' => array(),
+        'datasets' => array(
+            array(
+                'label' => ucfirst($y_axis_measure),
+                'data' => array()
+            )
+        )
+    );
+
+    foreach ($results as $row) {
+        $data['labels'][] = $row->datetime;
+        $data['datasets'][0]['data'][] = $row->$y_axis_measure;
     }
 
-    wp_die(); // Required to terminate AJAX request properly
+    wp_send_json_success($data);
 }
-
-// Handle AJAX request for fetching graph data
-add_action('wp_ajax_fetch_weather_graph_data', 'fetch_weather_graph_data');
-add_action('wp_ajax_nopriv_fetch_weather_graph_data', 'fetch_weather_graph_data');
-?>

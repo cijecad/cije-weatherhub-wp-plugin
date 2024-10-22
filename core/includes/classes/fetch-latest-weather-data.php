@@ -1,23 +1,23 @@
 <?php
-// Function to fetch the latest weather data for each station
+// Exit if accessed directly.
+if (!defined('ABSPATH')) exit;
+
 function fetch_latest_weather_data() {
     global $wpdb;
-
-    // Query to fetch the latest weather data for each station, including station details
-    $data_table = $wpdb->prefix . 'weather_data';
+    $weather_data_table = $wpdb->prefix . 'weather_data';
     $stations_table = $wpdb->prefix . 'weather_stations';
 
     $query = "
-        SELECT wd1.*, ws.station_name, ws.latitude, ws.longitude
-        FROM $data_table wd1
+        SELECT wd1.*, ws.station_name, ws.school, ws.latitude, ws.longitude
+        FROM $weather_data_table wd1
         INNER JOIN (
-            SELECT station_id, MAX(datetime) as latest
-            FROM $data_table
+            SELECT station_id, MAX(date_time) as latest
+            FROM $weather_data_table
             GROUP BY station_id
         ) wd2
-        ON wd1.station_id = wd2.station_id AND wd1.datetime = wd2.latest
+        ON wd1.station_id = wd2.station_id AND wd1.date_time = wd2.latest
         LEFT JOIN $stations_table ws ON wd1.station_id = ws.station_id
-        ORDER BY wd1.datetime DESC
+        ORDER BY wd1.date_time DESC
     ";
 
     $results = $wpdb->get_results($query);
