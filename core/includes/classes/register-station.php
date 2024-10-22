@@ -3,10 +3,16 @@
 if (!defined('ABSPATH')) exit;
 
 function register_station_shortcode($atts) {
+    // Generate a simple math CAPTCHA
+    $num1 = rand(1, 9);
+    $num2 = rand(1, 9);
+    $captcha_question = "$num1 + $num2 = ?";
+    $captcha_answer = $num1 + $num2;
+
     // Output the HTML for the register station form
     ob_start();
     ?>
-    <form id="register-station-form">
+    <form id="register-station-form" style="display: flex; flex-direction: column; max-width: 400px;">
         <label for="station-name">Station Name:</label>
         <input type="text" id="station-name" name="station_name" required>
 
@@ -24,6 +30,10 @@ function register_station_shortcode($atts) {
 
         <label for="email">Email:</label>
         <input type="email" id="email" name="email" required>
+
+        <label for="captcha">What is <?php echo $captcha_question; ?></label>
+        <input type="text" id="captcha" name="captcha" required>
+        <input type="hidden" id="captcha_answer" name="captcha_answer" value="<?php echo $captcha_answer; ?>">
 
         <button type="submit">Register Station</button>
     </form>
@@ -58,6 +68,13 @@ function handle_register_station() {
     $latitude = sanitize_text_field($_POST['latitude']);
     $longitude = sanitize_text_field($_POST['longitude']);
     $email = sanitize_email($_POST['email']);
+    $captcha = sanitize_text_field($_POST['captcha']);
+    $captcha_answer = sanitize_text_field($_POST['captcha_answer']);
+
+    // Verify CAPTCHA
+    if ($captcha != $captcha_answer) {
+        wp_send_json_error(array('message' => 'CAPTCHA verification failed.'));
+    }
 
     // Check if station_name is unique
     $table_name = $wpdb->prefix . 'weather_stations';
