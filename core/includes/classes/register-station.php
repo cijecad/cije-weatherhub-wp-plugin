@@ -10,7 +10,7 @@ function register_station_shortcode($atts) {
     $captcha_answer = $num1 + $num2;
 
     // Enqueue the JavaScript file
-    wp_enqueue_script('register-station-js', plugins_url('core/includes/assets/js/register-station.js', dirname(__FILE__)), array('jquery'), null, true);
+    wp_enqueue_script('register-station-js', plugins_url('/assets/js/register-station.js', dirname(__FILE__)), array('jquery'), null, true);
 
     // Localize script to pass AJAX URL and other settings
     wp_localize_script('register-station-js', 'registerStationSettings', array(
