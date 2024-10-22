@@ -49,7 +49,14 @@ function register_station_shortcode($atts) {
                     type: 'POST',
                     data: formData + '&action=register_station',
                     success: function(response) {
-                        $('#registration-result').html(response.data.message);
+                        if (response.success) {
+                            $('#registration-result').html('<p style="color: green;">' + response.data.message + '</p>');
+                        } else {
+                            $('#registration-result').html('<p style="color: red;">' + response.data.message + '</p>');
+                        }
+                    },
+                    error: function() {
+                        $('#registration-result').html('<p style="color: red;">An error occurred. Please try again.</p>');
                     }
                 });
             });
