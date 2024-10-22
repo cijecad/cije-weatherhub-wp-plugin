@@ -110,8 +110,10 @@ if (!class_exists('Cije_Weather_Hub')) :
         }
 
         public function enqueue_weather_hub_scripts() {
-            wp_enqueue_script('weather-map-js', plugins_url('/includes/assets/js/weather-map.js', __FILE__), array('jquery', 'leaflet'), null, true);
-            wp_enqueue_script('register-station-js', plugins_url('/includes/assets/js/register-station.js', __FILE__), array('jquery'), null, true);
+            wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js', array(), null, true);
+            wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css', array(), null, 'all');
+            wp_enqueue_script('weather-map-js', plugins_url('/core/includes/assets/js/weather-map.js', __FILE__), array('jquery', 'leaflet-js'), null, true);
+            wp_enqueue_script('register-station-js', plugins_url('/core/includes/assets/js/register-station.js', __FILE__), array('jquery'), null, true);
         }
 
         // Register shortcodes

@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 
 function weather_map_shortcode($atts) {
     // Enqueue the JavaScript file
-    wp_enqueue_script('weather-map-js', plugins_url('/includes/assets/js/weather-map.js', __FILE__), array('jquery', 'leaflet'), null, true);
+    wp_enqueue_script('weather-map-js', plugins_url('../assets/js/weather-map.js', __FILE__), array('jquery', 'leaflet-js'), null, true);
 
     // Localize script to pass AJAX URL and other settings
     wp_localize_script('weather-map-js', 'weatherHubSettings', array(

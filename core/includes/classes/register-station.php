@@ -10,7 +10,7 @@ function register_station_shortcode($atts) {
     $captcha_answer = $num1 + $num2;
 
     // Enqueue the JavaScript file
-    wp_enqueue_script('register-station-js', plugins_url('/assets/js/register-station.js', dirname(__FILE__)), array('jquery'), null, true);
+    wp_enqueue_script('register-station-js', plugins_url('../assets/js/register-station.js', __FILE__), array('jquery'), null, true);
 
     // Localize script to pass AJAX URL and other settings
     wp_localize_script('register-station-js', 'registerStationSettings', array(
@@ -64,16 +64,6 @@ function handle_register_station() {
     $captcha = sanitize_text_field($_POST['captcha']);
     $captcha_answer = sanitize_text_field($_POST['captcha_answer']);
 
-    // Debugging statements
-    error_log('Station Name: ' . $station_name);
-    error_log('School: ' . $school);
-    error_log('Zip Code: ' . $zip_code);
-    error_log('Latitude: ' . $latitude);
-    error_log('Longitude: ' . $longitude);
-    error_log('Email: ' . $email);
-    error_log('Captcha: ' . $captcha);
-    error_log('Captcha Answer: ' . $captcha_answer);
-
     // Verify CAPTCHA
     if ($captcha != $captcha_answer) {
         wp_send_json_error(array('message' => 'CAPTCHA verification failed.'));
@@ -84,6 +74,28 @@ function handle_register_station() {
     $existing_station = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE station_name = %s", $station_name));
     if ($existing_station > 0) {
         wp_send_json_error(array('message' => 'Station name already exists.'));
+    }
+
+    // If latitude and longitude are not provided, get them from the zip code using Nominatim API with country code
+    if (empty($latitude) || empty($longitude)) {
+        $country_code = 'us'; // Set your country code here
+        $geocode_url = 'https://nominatim.openstreetmap.org/search?postalcode=' . urlencode($zip_code) . '&countrycodes=' . $country_code . '&format=json&limit=1';
+        error_log('Geocode URL: ' . $geocode_url); // Debugging statement
+        $response = wp_remote_get($geocode_url);
+        if (is_wp_error($response)) {
+            wp_send_json_error(array('message' => 'Failed to get latitude and longitude from zip code.'));
+        }
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+        error_log('Geocoding response: ' . print_r($data, true)); // Debugging statement
+        if (!empty($data[0])) {
+            $latitude = $data[0]['lat'];
+            $longitude = $data[0]['lon'];
+            error_log('Extracted latitude: ' . $latitude); // Debugging statement
+            error_log('Extracted longitude: ' . $longitude); // Debugging statement
+        } else {
+            wp_send_json_error(array('message' => 'Failed to get latitude and longitude from zip code.'));
+        }
     }
 
     // Generate a random 6-character alphanumeric passkey
