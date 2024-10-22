@@ -2,16 +2,16 @@
 // Exit if accessed directly.
 if (!defined('ABSPATH')) exit;
 
-if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
+if (!class_exists('Cije_Weather_Hub')) :
 
     /**
-     * Main Cije_Weather_Hub_Wp_Plugin Class.
+     * Main Cije_Weather_Hub Class.
      *
      * @package     WEATHERHUB
-     * @subpackage  Classes/Cije_Weather_Hub_Wp_Plugin
+     * @subpackage  Classes/Cije_Weather_Hub
      * @since       1.0.0
      */
-    final class Cije_Weather_Hub_Wp_Plugin {
+    final class Cije_Weather_Hub {
 
         private static $instance;
 
@@ -19,23 +19,23 @@ if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
         public $settings;
 
         public function __clone() {
-            _doing_it_wrong(__FUNCTION__, __('You are not allowed to clone this class.', 'cije-weather-hub-wp-plugin'), '1.0.0');
+            _doing_it_wrong(__FUNCTION__, __('You are not allowed to clone this class.', 'cije-weather-hub'), '1.0.0');
         }
 
         public function __wakeup() {
-            _doing_it_wrong(__FUNCTION__, __('You are not allowed to unserialize this class.', 'cije-weather-hub-wp-plugin'), '1.0.0');
+            _doing_it_wrong(__FUNCTION__, __('You are not allowed to unserialize this class.', 'cije-weather-hub'), '1.0.0');
         }
 
         public static function instance() {
-            if (!isset(self::$instance) && !(self::$instance instanceof Cije_Weather_Hub_Wp_Plugin)) {
-                self::$instance = new Cije_Weather_Hub_Wp_Plugin;
+            if (!isset(self::$instance) && !(self::$instance instanceof Cije_Weather_Hub)) {
+                self::$instance = new Cije_Weather_Hub;
                 self::$instance->base_hooks();
                 self::$instance->includes();
-                self::$instance->helpers = new Cije_Weather_Hub_Wp_Plugin_Helpers();
-                self::$instance->settings = new Cije_Weather_Hub_Wp_Plugin_Settings();
+                self::$instance->helpers = new Cije_Weather_Hub_Helpers();
+                self::$instance->settings = new Cije_Weather_Hub_Settings();
 
                 // Fire the plugin logic
-                new Cije_Weather_Hub_Wp_Plugin_Run();
+                new Cije_Weather_Hub_Run();
 
                 // Fire a custom action to allow dependencies after the successful plugin setup
                 do_action('WEATHERHUB/plugin_loaded');
@@ -45,9 +45,9 @@ if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
         }
 
         private function includes() {
-            require_once plugin_dir_path(__FILE__) . 'includes/classes/class-cije-weather-hub-wp-plugin-helpers.php';
-            require_once plugin_dir_path(__FILE__) . 'includes/classes/class-cije-weather-hub-wp-plugin-settings.php';
-            require_once plugin_dir_path(__FILE__) . 'includes/classes/class-cije-weather-hub-wp-plugin-run.php';
+            require_once plugin_dir_path(__FILE__) . 'includes/classes/class-cije-weather-hub-helpers.php';
+            require_once plugin_dir_path(__FILE__) . 'includes/classes/class-cije-weather-hub-settings.php';
+            require_once plugin_dir_path(__FILE__) . 'includes/classes/class-cije-weather-hub-run.php';
 
             // Include other required files
             include_once(plugin_dir_path(__FILE__) . 'includes/classes/weather-map-shortcode.php');
@@ -106,7 +106,7 @@ if (!class_exists('Cije_Weather_Hub_Wp_Plugin')) :
         }
 
         public function load_textdomain() {
-            load_plugin_textdomain('cije-weather-hub-wp-plugin', FALSE, dirname(plugin_basename(__FILE__)) . '/languages/');
+            load_plugin_textdomain('cije-weather-hub', FALSE, dirname(plugin_basename(__FILE__)) . '/languages/');
         }
 
         public function enqueue_weather_hub_scripts() {

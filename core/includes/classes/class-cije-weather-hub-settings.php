@@ -4,17 +4,17 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Class Cije_Weather_Hub_Wp_Plugin_Settings
+ * Class Cije_Weather_Hub_Settings
  *
  * This class contains all of the plugin settings.
  * Here you can configure the whole plugin data.
  *
  * @package		WEATHERHUB
- * @subpackage	Classes/Cije_Weather_Hub_Wp_Plugin_Settings
+ * @subpackage	Classes/Cije_Weather_Hub_Settings
  * @author		Christopher Auger-Dominguez
  * @since		1.0.0
  */
-class Cije_Weather_Hub_Wp_Plugin_Settings{
+class Cije_Weather_Hub_Settings{
 
 	/**
 	 * The plugin name
@@ -25,7 +25,7 @@ class Cije_Weather_Hub_Wp_Plugin_Settings{
 	private $plugin_name;
 
 	/**
-	 * Our Cije_Weather_Hub_Wp_Plugin_Settings constructor 
+	 * Our Cije_Weather_Hub_Settings constructor 
 	 * to run the plugin logic.
 	 *
 	 * @since 1.0.0

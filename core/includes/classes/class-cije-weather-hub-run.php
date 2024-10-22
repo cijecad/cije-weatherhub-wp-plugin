@@ -4,16 +4,16 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Class Cije_Weather_Hub_Wp_Plugin_Run
+ * Class Cije_Weather_Hub_Run
  *
  * Thats where we bring the plugin to life
  *
  * @package		WEATHERHUB
- * @subpackage	Classes/Cije_Weather_Hub_Wp_Plugin_Run
+ * @subpackage	Classes/Cije_Weather_Hub_Run
  * @author		Christopher Auger-Dominguez
  * @since		1.0.0
  */
-class Cije_Weather_Hub_Wp_Plugin_Run{
+class Cije_Weather_Hub_Run{
 
 	/**
 	 * Our Cije_Weather_Hub_Wp_Plugin_Run constructor 
@@ -66,7 +66,7 @@ class Cije_Weather_Hub_Wp_Plugin_Run{
 	public function enqueue_backend_scripts_and_styles() {
 		wp_enqueue_script( 'weatherhub-backend-scripts', WEATHERHUB_PLUGIN_URL . 'core/includes/assets/js/backend-scripts.js', array(), WEATHERHUB_VERSION, false );
 		wp_localize_script( 'weatherhub-backend-scripts', 'weatherhub', array(
-			'plugin_name'   	=> __( WEATHERHUB_NAME, 'cije-weather-hub-wp-plugin' ),
+			'plugin_name'   	=> __( WEATHERHUB_NAME, 'cije-weather-hub' ),
 		));
 	}
 

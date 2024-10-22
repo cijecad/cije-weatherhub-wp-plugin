@@ -13,12 +13,12 @@
 #include "esp_sleep.h"
 
 // Replace with your registered station_id and passkey
-const int station_id = 1; // Use your assigned station ID number
-const char* passkey = "kFEaY9K6nWro";  // Replace with your actual passkey
+const int station_id = 0; // Use your assigned station ID number
+const char* passkey = "station_passkey";  // Replace with your actual passkey
 
 // Replace with your network credentials
-const char* ssid = "PutnamChalet";
-const char* password = "67355976";
+const char* ssid = "local_sside";
+const char* password = "ssid_password";
 
 // Server URL
 const char* serverName = "https://www.cijeweatherhub.site/wp-content/plugins/weather-hub/post-weather-data.php";

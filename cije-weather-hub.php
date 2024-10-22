@@ -24,7 +24,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // Plugin name
-define( 'WEATHERHUB_NAME', 'CIJE Weather Hub WP Plugin' );
+define( 'WEATHERHUB_NAME', 'CIJE Weather Hub' );
 
 // Plugin version
 define( 'WEATHERHUB_VERSION', '1.0.0' );
@@ -44,17 +44,17 @@ define( 'WEATHERHUB_PLUGIN_URL', plugin_dir_url( WEATHERHUB_PLUGIN_FILE ) );
 /**
  * Load the main class for the core functionality
  */
-require_once WEATHERHUB_PLUGIN_DIR . 'core/class-cije-weather-hub-wp-plugin.php';
+require_once WEATHERHUB_PLUGIN_DIR . 'core/class-cije-weather-hub.php';
 
 /**
  * The main function to load the only instance
  * of our master class.
  *
  * @since   1.0.0
- * @return  object|Cije_Weather_Hub_Wp_Plugin
+ * @return  object|Cije_Weather_Hub
  */
 function WEATHERHUB() {
-    return Cije_Weather_Hub_Wp_Plugin::instance();
+    return Cije_Weather_Hub::instance();
 }
 
 WEATHERHUB();
