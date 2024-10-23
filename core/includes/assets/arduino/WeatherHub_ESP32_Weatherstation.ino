@@ -1,11 +1,3 @@
-// ******************************************
-// Weather Hub Database Connection Test - CIJE Weather Hub
-// 
-// - You must register your weather station to receive a unique station ID. 
-// - Register your station at: https://www.cijeweatherhub.site/register-weather-station
-// - You will need a registered station_id # and passkey to successfully post data to the database.
-// ******************************************
-
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <DHT.h>
@@ -17,14 +9,14 @@ const int station_id = 0; // Use your assigned station ID number
 const char* passkey = "station_passkey";  // Replace with your actual passkey
 
 // Replace with your network credentials
-const char* ssid = "local_sside";
+const char* ssid = "local_ssid";
 const char* password = "ssid_password";
 
 // Server URL
-const char* serverName = "https://www.cijeweatherhub.site/wp-content/plugins/weather-hub/post-weather-data.php";
+const char* serverName = "https://www.cijeweatherhub.site/wp-content/plugins/cije-weather-hub-wp-plugin/core/includes/classes/post-weather-data.php"; // Enter ServerName here
 
 // Sensor Setup
-#define USE_DHT 
+// #define USE_DHT // Comment this out if using BME280
 #ifdef USE_DHT
   #define DHTPIN 17
   #define DHTTYPE DHT22
@@ -37,117 +29,86 @@ const char* serverName = "https://www.cijeweatherhub.site/wp-content/plugins/wea
 // Placeholder for wind speed (from anemometer)
 float wind_speed = 0.0;
 
+// Placeholder for rain sensor value
+int rain_sensor_pin = 34; // Assuming the rain sensor is connected to analog pin 34
+float rain_inches = 0.0;
+
 // Variable for sleep interval (in seconds)
 const uint64_t sleep_interval_seconds = 6 * 3600; // 6 hours in seconds
 const uint64_t sleep_interval_us = sleep_interval_seconds * 1000000ULL;
 
-const int wifi_timeout_ms = 20000; // 20 seconds timeout for WiFi connection
-
-//#define LED_BUILTIN 2  // Built-in LED pin (change if necessary)
-
 void setup() {
   Serial.begin(115200);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
 
   // Initialize sensors
   #ifdef USE_DHT
     dht.begin();
-    Serial.println("DHT22 sensor initialized...");
   #else
     if (!bme.begin(BME280_I2C_ADDR)) {
-      Serial.println("BME280 sensor initialization failed!");
-    } else {
-      Serial.println("BME280 sensor initialized...");
+      Serial.println("Could not find a valid BME280 sensor, check wiring!");
+      while (1);
     }
   #endif
-
-  // Connect to WiFi with timeout
-  if (!connectToWiFi()) {
-    Serial.println("Failed to connect to WiFi. Going back to sleep...");
-    goToSleep();
-  }
-
-  // Post weather data once for testing
-  postWeatherData();
-
-  // Go to deep sleep after posting data
-  goToSleep();
 }
 
 void loop() {
-  // Nothing to do in the loop; the ESP will sleep after posting data.
-}
+  // Read sensor data
+  float temperature, humidity, pressure;
+  #ifdef USE_DHT
+    temperature = dht.readTemperature();
+    humidity = dht.readHumidity();
+    pressure = 0.0; // DHT does not provide pressure
+  #else
+    temperature = bme.readTemperature();
+    humidity = bme.readHumidity();
+    pressure = bme.readPressure() / 100.0F; // Convert Pa to hPa
+  #endif
 
-// Function to connect to WiFi with a timeout
-bool connectToWiFi() {
-  WiFi.begin(ssid, password);
-  Serial.println("Connecting to WiFi...");
+  // Read rain sensor value
+  int rain_sensor_value = analogRead(rain_sensor_pin);
+  rain_inches = (rain_sensor_value / 1024.0) * 1.57; // Convert analog value to inches
 
-  unsigned long startAttemptTime = millis();
-  while (WiFi.status() != WL_CONNECTED) {
-    if (millis() - startAttemptTime >= wifi_timeout_ms) {
-      Serial.println("WiFi connection timeout.");
-      return false; // Failed to connect within the timeout
-    }
-    delay(500);
-    Serial.print(".");
-  }
+  // Print sensor data
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.print(" °C, Humidity: ");
+  Serial.print(humidity);
+  Serial.print(" %, Pressure: ");
+  Serial.print(pressure);
+  Serial.print(" hPa, Wind Speed: ");
+  Serial.print(wind_speed);
+  Serial.print(" m/s, Rain: ");
+  Serial.print(rain_inches);
+  Serial.println(" inches");
 
-  Serial.println("\nConnected to WiFi");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
-  return true;
-}
-
-// Function to post weather data
-void postWeatherData() {
+  // Send data to server
   if (WiFi.status() == WL_CONNECTED) {
-    float temperature, humidity, pressure;
-
-    #ifdef USE_DHT
-      temperature = dht.readTemperature();
-      humidity = dht.readHumidity();
-      pressure = 0;
-    #else
-      temperature = bme.readTemperature();
-      humidity = bme.readHumidity();
-      pressure = bme.readPressure() / 100.0F;
-    #endif
-
-    wind_speed = analogRead(A0) * (5.0 / 1023.0); 
-
-    if (isnan(temperature) || isnan(humidity)) {
-      Serial.println("Failed to read sensor data!");
-      return;
-    }
-
     HTTPClient http;
     http.begin(serverName);
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    String httpRequestData = "station_id=" + String(station_id) +
-                             "&passkey=" + String(passkey) +
-                             "&temperature=" + String(temperature) +
-                             "&humidity=" + String(humidity) +
-                             "&pressure=" + String(pressure) +
-                             "&wind_speed=" + String(wind_speed);
-
-    Serial.print("HTTP Request Data: ");
-    Serial.println(httpRequestData);
+    String httpRequestData = "station_id=" + String(station_id)
+                           + "&passkey=" + String(passkey)
+                           + "&temperature=" + String(temperature)
+                           + "&humidity=" + String(humidity)
+                           + "&pressure=" + String(pressure)
+                           + "&wind_speed=" + String(wind_speed)
+                           + "&rain_inches=" + String(rain_inches);
 
     int httpResponseCode = http.POST(httpRequestData);
 
     if (httpResponseCode > 0) {
       String response = http.getString();
-      Serial.print("Response Code: ");
       Serial.println(httpResponseCode);
-      Serial.print("Response: ");
       Serial.println(response);
-
-      if (response.indexOf("Invalid station_id or passkey") != -1) {
-        Serial.println("Error: station_id or passkey did not match!");
-      } else if (response.indexOf("Station not found") != -1) {
-        Serial.println("Error: Station not found! Please register your station.");
-      }
     } else {
       Serial.print("Error on sending POST: ");
       Serial.println(httpResponseCode);
@@ -157,15 +118,8 @@ void postWeatherData() {
   } else {
     Serial.println("WiFi Disconnected");
   }
-}
 
-// Function to put ESP32 to sleep
-void goToSleep() {
-  // Turn off the built-in LED before going to sleep
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
-
-  Serial.println("Going to sleep...");
+  // Sleep
   esp_sleep_enable_timer_wakeup(sleep_interval_us);
   esp_deep_sleep_start();
-}
+} 

@@ -12,6 +12,9 @@ function post_weather_data() {
     $precipitation = isset($_POST['precipitation']) ? floatval($_POST['precipitation']) : null;
     $wind_speed = isset($_POST['wind_speed']) ? floatval($_POST['wind_speed']) : null;
 
+    // Log received data for debugging
+    error_log('Received data: ' . print_r($_POST, true));
+
     // Validate station_id and passkey
     if ($station_id && $passkey) {
         // Query to select station_name and passkey
@@ -25,6 +28,7 @@ function post_weather_data() {
 
             // Check if the passkey matches
             if ($db_passkey !== $passkey) {
+                error_log('Invalid passkey'); // Log error
                 wp_send_json_error(array('message' => 'Invalid passkey'));
                 wp_die();
             }
@@ -47,17 +51,22 @@ function post_weather_data() {
             );
 
             if ($inserted) {
+                error_log('Data inserted successfully'); // Log success
                 wp_send_json_success(array('message' => 'Weather data successfully posted'));
             } else {
+                error_log('Failed to insert data: ' . $wpdb->last_error); // Log error
                 wp_send_json_error(array('message' => 'Failed to post weather data'));
             }
         } else {
+            error_log('Invalid station_id'); // Log error
             wp_send_json_error(array('message' => 'Invalid station_id'));
         }
     } else {
         if (!$station_id) {
+            error_log('Missing station_id'); // Log error
             wp_send_json_error(array('message' => 'Missing station_id'));
         } elseif (!$passkey) {
+            error_log('Missing passkey'); // Log error
             wp_send_json_error(array('message' => 'Missing passkey'));
         }
     }
