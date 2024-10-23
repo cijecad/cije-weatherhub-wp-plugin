@@ -88,7 +88,7 @@ if (!class_exists('Cije_Weather_Hub')) :
             // Create weather_data table
             $table_name_data = $wpdb->prefix . 'weather_data';
             $sql_data = "CREATE TABLE $table_name_data (
-                data_id mediumint(9) NOT NULL AUTO_INCREMENT,
+                id mediumint(9) NOT NULL AUTO_INCREMENT,
                 station_id mediumint(9) NOT NULL,
                 date_time datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 temperature float(5, 2) NOT NULL,
@@ -96,7 +96,7 @@ if (!class_exists('Cije_Weather_Hub')) :
                 pressure float(7, 2) NOT NULL,
                 precipitation float(5, 2) NOT NULL,
                 wind_speed float(5, 2) NOT NULL,
-                PRIMARY KEY  (data_id),
+                PRIMARY KEY  (id),
                 FOREIGN KEY (station_id) REFERENCES $table_name_stations(station_id) ON DELETE CASCADE
             ) $charset_collate;";
 
@@ -136,3 +136,4 @@ if (!class_exists('Cije_Weather_Hub')) :
         }
     }
 endif;
+?>
