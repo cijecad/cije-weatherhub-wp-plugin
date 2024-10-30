@@ -1,80 +1,99 @@
 <?php
-// Function to handle posting weather data
-function post_weather_data() {
-    global $wpdb;
+// Include the WordPress environment
+require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
 
-    // Get POST data
-    $station_id = isset($_POST['station_id']) ? sanitize_text_field($_POST['station_id']) : null;
-    $passkey = isset($_POST['passkey']) ? sanitize_text_field($_POST['passkey']) : null;
-    $temperature = isset($_POST['temperature']) ? floatval($_POST['temperature']) : null;
-    $humidity = isset($_POST['humidity']) ? floatval($_POST['humidity']) : null;
-    $pressure = isset($_POST['pressure']) ? floatval($_POST['pressure']) : null;
-    $precipitation = isset($_POST['precipitation']) ? floatval($_POST['precipitation']) : null;
-    $wind_speed = isset($_POST['wind_speed']) ? floatval($_POST['wind_speed']) : null;
+// Log a message to confirm the script is being called
+error_log('post-weather-data.php script called');
 
-    // Log received data for debugging
-    error_log('Received data: ' . print_r($_POST, true));
-
-    // Validate station_id and passkey
-    if ($station_id && $passkey) {
-        // Query to select station_name and passkey
-        $stations_table = $wpdb->prefix . 'weather_stations';
-        $query = $wpdb->prepare("SELECT station_name, passkey FROM $stations_table WHERE station_id = %s", $station_id);
-        $row = $wpdb->get_row($query);
-
-        if ($row) {
-            $db_passkey = $row->passkey;
-            $station_name = $row->station_name;
-
-            // Check if the passkey matches
-            if ($db_passkey !== $passkey) {
-                error_log('Invalid passkey'); // Log error
-                wp_send_json_error(array('message' => 'Invalid passkey'));
-                wp_die();
-            }
-
-            // Insert weather data into the database
-            $data_table = $wpdb->prefix . 'weather_data';
-            $inserted = $wpdb->insert(
-                $data_table,
-                array(
-                    'station_id' => $station_id,
-                    'temperature' => $temperature,
-                    'humidity' => $humidity,
-                    'pressure' => $pressure,
-                    'precipitation' => $precipitation,
-                    'wind_speed' => $wind_speed
-                ),
-                array(
-                    '%d', '%f', '%f', '%f', '%f', '%f'
-                )
-            );
-
-            if ($inserted) {
-                error_log('Data inserted successfully'); // Log success
-                wp_send_json_success(array('message' => 'Weather data successfully posted'));
-            } else {
-                error_log('Failed to insert data: ' . $wpdb->last_error); // Log error
-                wp_send_json_error(array('message' => 'Failed to post weather data'));
-            }
-        } else {
-            error_log('Invalid station_id'); // Log error
-            wp_send_json_error(array('message' => 'Invalid station_id'));
-        }
-    } else {
-        if (!$station_id) {
-            error_log('Missing station_id'); // Log error
-            wp_send_json_error(array('message' => 'Missing station_id'));
-        } elseif (!$passkey) {
-            error_log('Missing passkey'); // Log error
-            wp_send_json_error(array('message' => 'Missing passkey'));
-        }
-    }
-
-    wp_die(); // Required to terminate AJAX request properly
+// Ensure this script is only accessible via POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo 'Method Not Allowed';
+    exit;
 }
 
-// Handle AJAX request for posting weather data
-add_action('wp_ajax_post_weather_data', 'post_weather_data');
-add_action('wp_ajax_nopriv_post_weather_data', 'post_weather_data');
+// Retrieve POST data
+$station_id = $_POST['station_id'] ?? null;
+$passkey = $_POST['passkey'] ?? null;
+$temperature = $_POST['temperature'] ?? null;
+$humidity = $_POST['humidity'] ?? null;
+$pressure = $_POST['pressure'] ?? null;
+$wind_speed = $_POST['wind_speed'] ?? null;
+$rain_inches = $_POST['rain_inches'] ?? null;
+
+// Log received data for debugging
+error_log('Received data: ' . print_r($_POST, true));
+
+// Validate required fields
+if (!$station_id || !$passkey || !$temperature || !$humidity || !$pressure || !$wind_speed || !$rain_inches) {
+    http_response_code(400);
+    echo 'Bad Request: Missing required fields';
+    exit;
+}
+
+// Check if the station ID and passkey match
+global $wpdb;
+$stations_table = $wpdb->prefix . 'weather_stations';
+$station = $wpdb->get_row($wpdb->prepare("SELECT * FROM $stations_table WHERE station_id = %d AND passkey = %s", $station_id, $passkey));
+
+if (!$station) {
+    error_log('Invalid station ID or passkey');
+    http_response_code(403);
+    echo 'Invalid station ID or passkey';
+    exit;
+}
+
+// Validate data ranges
+if ($temperature < -50 || $temperature > 150 || $humidity < 0 || $humidity > 100 || $pressure < 800 || $pressure > 1100 || $wind_speed < 0 || $wind_speed > 200 || $rain_inches < 0 || $rain_inches > 100) {
+    error_log('Data out of range');
+    http_response_code(400);
+    echo 'Data out of range';
+    exit;
+}
+
+// Check the last data timestamp
+$data_table = $wpdb->prefix . 'weather_data';
+$last_entry = $wpdb->get_row($wpdb->prepare("SELECT date_time FROM $data_table WHERE station_id = %d ORDER BY date_time DESC LIMIT 1", $station_id));
+
+if ($last_entry) {
+    $last_time = strtotime($last_entry->date_time);
+    $current_time = time();
+    if (($current_time - $last_time) < 3600) { // 3600 seconds = 1 hour
+        error_log('Post too soon');
+        http_response_code(429);
+        echo 'Post too soon. Please wait an hour.';
+        exit;
+    }
+}
+
+// Process the data (e.g., save to database)
+$table_name = $wpdb->prefix . 'weather_data';
+
+// Log the table name for debugging
+error_log('Table name: ' . $table_name);
+
+// Insert data into the database
+$inserted = $wpdb->insert(
+    $table_name,
+    array(
+        'station_id' => $station_id,
+        'temperature' => $temperature,
+        'humidity' => $humidity,
+        'pressure' => $pressure,
+        'wind_speed' => $wind_speed,
+        'precipitation' => $rain_inches
+    ),
+    array(
+        '%d', '%f', '%f', '%f', '%f', '%f'
+    )
+);
+
+if ($inserted) {
+    error_log('Data inserted successfully');
+    echo 'Data received successfully';
+} else {
+    error_log('Failed to insert data: ' . $wpdb->last_error);
+    http_response_code(500);
+    echo 'Failed to insert data';
+}
 ?>
