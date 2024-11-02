@@ -1,6 +1,20 @@
 <?php
+// Exit if accessed directly.
+if (!defined('ABSPATH')) exit;
+
 // Function to output the weather graph shortcode
 function weather_graph_shortcode($atts) {
+    // Enqueue the Chart.js library
+    wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
+
+    // Enqueue the JavaScript file for handling the graph
+    wp_enqueue_script('weather-graph-handler-js', plugins_url('../assets/js/weather-graph-handler.js', __FILE__), array('jquery', 'chart-js'), null, true);
+
+    // Localize script to pass AJAX URL and other settings
+    wp_localize_script('weather-graph-handler-js', 'weatherGraphSettings', array(
+        'ajax_url' => admin_url('admin-ajax.php')
+    ));
+
     ob_start();
     ?>
     <div>
@@ -35,55 +49,42 @@ function weather_graph_shortcode($atts) {
 function fetch_weather_graph_data() {
     global $wpdb;
 
-    // Get filter parameters from AJAX request
-    $station_ids = isset($_POST['station_ids']) ? array_map('sanitize_text_field', $_POST['station_ids']) : array();
-    $y_axis_measure = isset($_POST['y_axis_measure']) ? sanitize_text_field($_POST['y_axis_measure']) : 'temperature';
-    $x_axis_time = isset($_POST['x_axis_time']) ? sanitize_text_field($_POST['x_axis_time']) : 'day';
+    // Retrieve POST data
+    $station_ids = isset($_POST['station_ids']) ? $_POST['station_ids'] : '';
+    $y_axis_measure = isset($_POST['y_axis_measure']) ? $_POST['y_axis_measure'] : '';
+    $x_axis_time = isset($_POST['x_axis_time']) ? $_POST['x_axis_time'] : '';
 
-    // Define the time range based on the selected period
-    $time_condition = '';
-    switch ($x_axis_time) {
-        case 'day':
-            $time_condition = "AND datetime >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
-            break;
-        case 'week':
-            $time_condition = "AND datetime >= DATE_SUB(NOW(), INTERVAL 1 WEEK)";
-            break;
-        case 'month':
-            $time_condition = "AND datetime >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
-            break;
-        case 'year':
-            $time_condition = "AND datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
-            break;
+    // Validate required fields
+    if (empty($station_ids) || empty($y_axis_measure) || empty($x_axis_time)) {
+        wp_send_json_error('Missing required fields');
+        return;
     }
 
-    // Fetch data from the database
-    // This is a placeholder query, you need to implement the actual data fetching logic
+    // Fetch weather data based on the selected parameters
+    $table_name = $wpdb->prefix . 'weather_data';
     $query = $wpdb->prepare("
-        SELECT datetime, $y_axis_measure
-        FROM {$wpdb->prefix}weather_data
-        WHERE station_id IN (" . implode(',', array_fill(0, count($station_ids), '%d')) . ")
-        $time_condition
-        ORDER BY datetime ASC
-    ", $station_ids);
+        SELECT date_time, $y_axis_measure 
+        FROM $table_name 
+        WHERE station_id IN (%s) 
+        AND date_time >= DATE_SUB(NOW(), INTERVAL 1 %s)
+        ORDER BY date_time ASC
+    ", implode(',', $station_ids), strtoupper($x_axis_time));
 
     $results = $wpdb->get_results($query);
 
-    // Prepare data for the response
-    $data = array(
-        'labels' => array(),
-        'datasets' => array(
-            array(
-                'label' => ucfirst($y_axis_measure),
-                'data' => array()
-            )
-        )
-    );
-
-    foreach ($results as $row) {
-        $data['labels'][] = $row->datetime;
-        $data['datasets'][0]['data'][] = $row->$y_axis_measure;
+    if ($results) {
+        $labels = array();
+        $values = array();
+        foreach ($results as $result) {
+            $labels[] = $result->date_time;
+            $values[] = $result->$y_axis_measure;
+        }
+        wp_send_json_success(array('labels' => $labels, 'values' => $values));
+    } else {
+        wp_send_json_error('No data found');
     }
-
-    wp_send_json_success($data);
 }
+
+add_action('wp_ajax_fetch_weather_graph_data', 'fetch_weather_graph_data');
+add_action('wp_ajax_nopriv_fetch_weather_graph_data', 'fetch_weather_graph_data');
+add_shortcode('weather_graph', 'weather_graph_shortcode');

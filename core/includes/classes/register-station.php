@@ -131,3 +131,4 @@ function handle_register_station() {
 
 add_action('wp_ajax_register_station', 'handle_register_station');
 add_action('wp_ajax_nopriv_register_station', 'handle_register_station');
+add_shortcode('register_station', 'register_station_shortcode');

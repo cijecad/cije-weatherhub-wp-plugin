@@ -5,6 +5,12 @@ jQuery(document).ready(function($) {
         const yAxisMeasure = $('#y-axis-measure').val();
         const xAxisTime = $('#x-axis-time').val();
 
+        console.log('Fetching weather data with parameters:', {
+            station_ids: stationIds,
+            y_axis_measure: yAxisMeasure,
+            x_axis_time: xAxisTime,
+        });
+
         $.ajax({
             url: weatherGraphSettings.ajax_url,
             type: 'POST',
@@ -15,14 +21,16 @@ jQuery(document).ready(function($) {
                 x_axis_time: xAxisTime,
             },
             success: function(response) {
+                console.log('AJAX request successful', response);
                 if (response.success) {
                     updateGraph(response.data);
                 } else {
-                    console.error(response.data);
+                    console.error('No data found:', response.data);
                     alert('No data found for the selected parameters.');
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('AJAX request failed:', status, error);
                 alert('Failed to fetch weather data. Please try again.');
             }
         });
@@ -37,7 +45,7 @@ jQuery(document).ready(function($) {
             data: {
                 labels: [],
                 datasets: [{
-                    label: '',
+                    label: 'Weather Data',
                     data: [],
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
@@ -61,16 +69,18 @@ jQuery(document).ready(function($) {
 
     // Function to update the graph with new data
     function updateGraph(data) {
+        console.log('Updating graph with data:', data);
         weatherChart.data.labels = data.labels;
-        weatherChart.data.datasets[0].label = data.datasets[0].label;
-        weatherChart.data.datasets[0].data = data.datasets[0].data;
+        weatherChart.data.datasets[0].data = data.values;
         weatherChart.update();
     }
 
-    // Event listeners for the select elements
-    $('#weather-station, #y-axis-measure, #x-axis-time').change(fetchWeatherData);
+    // Fetch weather data when the form is submitted
+    $('#weather-form').on('submit', function(event) {
+        event.preventDefault();
+        fetchWeatherData();
+    });
 
     // Initialize the graph on page load
     initializeGraph();
-    fetchWeatherData();
 });

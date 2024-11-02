@@ -1,16 +1,17 @@
 <?php
+// Exit if accessed directly.
+if (!defined('ABSPATH')) exit;
+
+// Ensure this script is only accessible via POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    return; // Exit if not accessed via POST
+}
+
 // Include the WordPress environment
 require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
 
 // Log a message to confirm the script is being called
 error_log('post-weather-data.php script called');
-
-// Ensure this script is only accessible via POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo 'Method Not Allowed';
-    exit;
-}
 
 // Retrieve POST data
 $station_id = $_POST['station_id'] ?? null;
@@ -25,9 +26,9 @@ $rain_inches = $_POST['rain_inches'] ?? null;
 error_log('Received data: ' . print_r($_POST, true));
 
 // Validate required fields
-if (!$station_id || !$passkey || !$temperature || !$humidity || !$pressure || !$wind_speed || !$rain_inches) {
+if ($station_id === null || $passkey === null || $temperature === null || $humidity === null || $pressure === null || $wind_speed === null || $rain_inches === null) {
     http_response_code(400);
-    echo 'Bad Request: Missing required fields';
+    wp_send_json_error('Bad Request: Missing required fields');
     exit;
 }
 
@@ -39,15 +40,33 @@ $station = $wpdb->get_row($wpdb->prepare("SELECT * FROM $stations_table WHERE st
 if (!$station) {
     error_log('Invalid station ID or passkey');
     http_response_code(403);
-    echo 'Invalid station ID or passkey';
+    wp_send_json_error('Invalid station ID or passkey');
     exit;
 }
 
-// Validate data ranges
-if ($temperature < -50 || $temperature > 150 || $humidity < 0 || $humidity > 100 || $pressure < 800 || $pressure > 1100 || $wind_speed < 0 || $wind_speed > 200 || $rain_inches < 0 || $rain_inches > 100) {
-    error_log('Data out of range');
+// Validate data ranges (allow zero values)
+$errors = [];
+if ($temperature < -50 || $temperature > 150) {
+    $errors[] = 'Temperature out of range (-50 to 150 °F)';
+}
+if ($humidity < 0 || $humidity > 100) {
+    $errors[] = 'Humidity out of range (0 to 100 %)';
+}
+if ($pressure != 0 && ($pressure < 800 || $pressure > 1100)) {
+    $errors[] = 'Pressure out of range (0 or 800 to 1100 hPa)';
+}
+if ($wind_speed < 0 || $wind_speed > 200) {
+    $errors[] = 'Wind speed out of range (0 to 200 mph)';
+}
+if ($rain_inches < 0 || $rain_inches > 100) {
+    $errors[] = 'Precipitation out of range (0 to 100 inches)';
+}
+
+if (!empty($errors)) {
+    $error_message = 'Data out of range: ' . implode(', ', $errors);
+    error_log($error_message);
     http_response_code(400);
-    echo 'Data out of range';
+    wp_send_json_error($error_message);
     exit;
 }
 
@@ -61,7 +80,7 @@ if ($last_entry) {
     if (($current_time - $last_time) < 3600) { // 3600 seconds = 1 hour
         error_log('Post too soon');
         http_response_code(429);
-        echo 'Post too soon. Please wait an hour.';
+        wp_send_json_error('Post too soon. Please wait an hour.');
         exit;
     }
 }
@@ -88,12 +107,17 @@ $inserted = $wpdb->insert(
     )
 );
 
+// Log the SQL query and any errors for debugging
+error_log('SQL Query: ' . $wpdb->last_query);
+error_log('SQL Error: ' . $wpdb->last_error);
+
 if ($inserted) {
     error_log('Data inserted successfully');
-    echo 'Data received successfully';
+    http_response_code(200);
+    wp_send_json_success('Data received successfully');
 } else {
     error_log('Failed to insert data: ' . $wpdb->last_error);
     http_response_code(500);
-    echo 'Failed to insert data';
+    wp_send_json_error('Failed to insert data');
 }
 ?>

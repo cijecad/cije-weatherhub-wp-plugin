@@ -1,36 +1,59 @@
 jQuery(document).ready(function($) {
-    console.log('Weather map script loaded'); // Debugging statement
+    // Log a message to confirm the document is ready
+    console.log('Document is ready');
 
-    // Initialize the map centered on North America
-    var map = L.map('weather-map').setView([37.8, -96], 4);
+    // Ensure the map container exists
+    if ($('#weather-map').length === 0) {
+        console.error('Map container not found');
+        return;
+    }
 
-    // Add OpenStreetMap tiles
+    // Initialize the map
+    var map = L.map('weather-map').setView([0, 0], 2);
+
+    // Log a message to confirm the map is initialized
+    console.log('Map initialized');
+
+    // Add a tile layer to the map
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Fetch weather station data and add markers to the map
+    // Log a message to confirm the tile layer is added
+    console.log('Tile layer added to map');
+
+    // Fetch weather stations via AJAX
+    console.log('Sending AJAX request to fetch weather stations');
     $.ajax({
         url: weatherHubSettings.ajax_url,
-        type: 'POST',
+        method: 'POST',
         data: {
             action: 'fetch_weather_stations'
         },
         success: function(response) {
-            console.log('AJAX response:', response); // Debugging statement
+            console.log('AJAX request successful', response);
             if (response.success) {
+                // Add markers to the map for each weather station
                 response.data.stations.forEach(function(station) {
+                    console.log('Adding marker for station:', station);
+                    var popupContent = '<b>' + station.station_name + '</b><br>' + station.school + '<br>' +
+                        'Temperature: ' + station.temperature + ' °F<br>' +
+                        'Humidity: ' + station.humidity + ' %<br>' +
+                        'Pressure: ' + station.pressure + ' hPa<br>' +
+                        'Wind Speed: ' + station.wind_speed + ' mph<br>' +
+                        'Precipitation: ' + station.precipitation + ' inches<br>' +
+                        'Last Updated: ' + station.date_time;
                     L.marker([station.latitude, station.longitude])
                         .addTo(map)
-                        .bindPopup('<b>' + station.station_name + '</b><br>' + station.school);
+                        .bindPopup(popupContent);
                 });
             } else {
-                console.error(response.data);
-                alert('Failed to fetch weather stations.');
+                console.error('Failed to fetch weather stations:', response.data);
             }
         },
-        error: function() {
-            alert('Failed to fetch weather stations. Please try again.');
+        error: function(xhr, status, error) {
+            console.error('AJAX request failed:', status, error);
+            console.error('Response:', xhr.responseText);
         }
     });
 });
