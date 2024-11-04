@@ -20,6 +20,7 @@ function weather_graph_shortcode($atts) {
     <div>
         <label for="weather-station">Select Weather Station:</label>
         <select id="weather-station">
+            <option value="" disabled selected>Select a station</option>
             <!-- Options will be populated dynamically -->
         </select>
 
@@ -85,6 +86,23 @@ function fetch_weather_graph_data() {
     }
 }
 
+// Function to fetch weather stations
+function fetch_weather_stations_for_dropdown() {
+    global $wpdb;
+
+    // Fetch weather stations from the database
+    $table_name = $wpdb->prefix . 'weather_stations';
+    $stations = $wpdb->get_results("SELECT station_id, station_name FROM $table_name");
+
+    if ($stations) {
+        wp_send_json_success(array('stations' => $stations));
+    } else {
+        wp_send_json_error('Failed to fetch weather stations');
+    }
+}
+
 add_action('wp_ajax_fetch_weather_graph_data', 'fetch_weather_graph_data');
 add_action('wp_ajax_nopriv_fetch_weather_graph_data', 'fetch_weather_graph_data');
+add_action('wp_ajax_fetch_weather_stations_for_dropdown', 'fetch_weather_stations_for_dropdown');
+add_action('wp_ajax_nopriv_fetch_weather_stations_for_dropdown', 'fetch_weather_stations_for_dropdown');
 add_shortcode('weather_graph', 'weather_graph_shortcode');

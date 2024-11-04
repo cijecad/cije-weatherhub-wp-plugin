@@ -36,6 +36,45 @@ jQuery(document).ready(function($) {
         });
     }
 
+    // Function to fetch weather stations and populate the dropdown
+    function fetchWeatherStations() {
+        console.log('Fetching weather stations for dropdown');
+        $.ajax({
+            url: weatherGraphSettings.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'fetch_weather_stations_for_dropdown'
+            },
+            success: function(response) {
+                console.log('AJAX request successful', response);
+                if (response.success) {
+                    const stations = response.data.stations;
+                    const dropdown = $('#weather-station');
+                    dropdown.empty();
+                    dropdown.append($('<option>', {
+                        value: '',
+                        text: 'Select a station',
+                        disabled: true,
+                        selected: true
+                    }));
+                    stations.forEach(function(station) {
+                        console.log('Adding station to dropdown:', station);
+                        dropdown.append($('<option>', {
+                            value: station.station_id,
+                            text: station.station_name
+                        }));
+                    });
+                } else {
+                    console.error('Failed to fetch weather stations:', response.data);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX request failed:', status, error);
+                alert('Failed to fetch weather stations. Please try again.');
+            }
+        });
+    }
+
     // Initialize the chart with Chart.js
     let weatherChart;
     function initializeGraph() {
@@ -80,6 +119,9 @@ jQuery(document).ready(function($) {
         event.preventDefault();
         fetchWeatherData();
     });
+
+    // Fetch weather stations and populate the dropdown on page load
+    fetchWeatherStations();
 
     // Initialize the graph on page load
     initializeGraph();
