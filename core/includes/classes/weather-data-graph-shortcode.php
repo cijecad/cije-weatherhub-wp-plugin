@@ -4,6 +4,9 @@ if (!defined('ABSPATH')) exit;
 
 // Function to output the weather graph shortcode
 function weather_graph_shortcode($atts) {
+    // Log a message to confirm the shortcode is being called
+    error_log('weather_graph_shortcode called');
+
     // Enqueue the Chart.js library
     wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
 
@@ -50,6 +53,9 @@ function weather_graph_shortcode($atts) {
 function fetch_weather_graph_data() {
     global $wpdb;
 
+    // Log a message to confirm the function is being called
+    error_log('fetch_weather_graph_data called');
+
     // Retrieve POST data
     $station_ids = isset($_POST['station_ids']) ? $_POST['station_ids'] : '';
     $y_axis_measure = isset($_POST['y_axis_measure']) ? $_POST['y_axis_measure'] : '';
@@ -82,21 +88,27 @@ function fetch_weather_graph_data() {
         }
         wp_send_json_success(array('labels' => $labels, 'values' => $values));
     } else {
+        error_log('No data found');
         wp_send_json_error('No data found');
     }
 }
 
-// Function to fetch weather stations
+// Function to fetch weather stations for dropdown
 function fetch_weather_stations_for_dropdown() {
     global $wpdb;
+
+    // Log a message to confirm the function is being called
+    error_log('fetch_weather_stations_for_dropdown called');
 
     // Fetch weather stations from the database
     $table_name = $wpdb->prefix . 'weather_stations';
     $stations = $wpdb->get_results("SELECT station_id, station_name FROM $table_name");
 
     if ($stations) {
+        error_log('Weather stations fetched successfully for dropdown');
         wp_send_json_success(array('stations' => $stations));
     } else {
+        error_log('Failed to fetch weather stations for dropdown');
         wp_send_json_error('Failed to fetch weather stations');
     }
 }
@@ -106,3 +118,4 @@ add_action('wp_ajax_nopriv_fetch_weather_graph_data', 'fetch_weather_graph_data'
 add_action('wp_ajax_fetch_weather_stations_for_dropdown', 'fetch_weather_stations_for_dropdown');
 add_action('wp_ajax_nopriv_fetch_weather_stations_for_dropdown', 'fetch_weather_stations_for_dropdown');
 add_shortcode('weather_graph', 'weather_graph_shortcode');
+?>

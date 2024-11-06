@@ -48,13 +48,19 @@ class Cije_Weather_Hub {
         error_log('Cije_Weather_Hub includes called');
 
         include_once WEATHERHUB_PLUGIN_DIR . 'core/includes/classes/weather-map-shortcode.php';
+        error_log('Included weather-map-shortcode.php');
         
         // Conditionally include post-weather-data.php only when accessed via POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['station_id']) && isset($_POST['passkey'])) {
             include_once WEATHERHUB_PLUGIN_DIR . 'core/includes/classes/post-weather-data.php';
+            error_log('Included post-weather-data.php');
         }
 
         include_once WEATHERHUB_PLUGIN_DIR . 'core/includes/classes/register-station.php';
+        error_log('Included register-station.php');
+        
+        include_once WEATHERHUB_PLUGIN_DIR . 'core/includes/classes/weather-data-graph-shortcode.php';
+        error_log('Included weather-data-graph-shortcode.php');
     }
 
     /**
@@ -75,3 +81,7 @@ class Cije_Weather_Hub {
         error_log('Cije_Weather_Hub init called');
     }
 }
+
+// Ensure the main instance of the class is loaded
+Cije_Weather_Hub::instance();
+?>

@@ -1,33 +1,13 @@
 <?php
 /**
- * CIJE Weather Hub WP Plugin
- *
- * @package       WEATHERHUB
- * @version       1.0.0
- * @wordpress-plugin
- * Plugin Name:   CIJE Weather Hub
- * Plugin URI:    https://cijeweatherhub.site/
- * Description:   A wordpress plugin to register and display DIY weather station data.
- * Version:       1.0.0
- * Author:        Christopher Auger-Dominguez
- * Author URI:    https://thecije.org/
- * Text Domain:   cije-weather-hub-wp-plugin
- * Domain Path:   /languages
- * License:       GPLv2
- * License URI:   https://www.gnu.org/licenses/gpl-2.0.html
- *
- * You should have received a copy of the GNU General Public License
- * along with CIJE Weather Hub WP Plugin. If not, see <https://www.gnu.org/licenses/gpl-2.0.html/>.
+ * Plugin Name: CIJE Weather Hub
+ * Plugin URI: https://cijeweatherhub.site/
+ * Description: A plugin to manage weather data and display weather maps.
+ * Version: 1.0.0
+ * Author: Christopher Auger-Dominguez
+ * Author URI: https://thecije.org/
+ * License: GPL2
  */
-
-// Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) exit;
-
-// Plugin name
-define( 'WEATHERHUB_NAME', 'CIJE Weather Hub' );
-
-// Plugin version
-define( 'WEATHERHUB_VERSION', '1.0.0' );
 
 // Plugin Root File
 define( 'WEATHERHUB_PLUGIN_FILE', __FILE__ );
@@ -40,6 +20,11 @@ define( 'WEATHERHUB_PLUGIN_DIR', plugin_dir_path( WEATHERHUB_PLUGIN_FILE ) );
 
 // Plugin Folder URL
 define( 'WEATHERHUB_PLUGIN_URL', plugin_dir_url( WEATHERHUB_PLUGIN_FILE ) );
+
+/**
+ * Log a message to confirm the main plugin file is being loaded
+ */
+error_log('CIJE Weather Hub plugin file loaded');
 
 /**
  * Load the main class for the core functionality

@@ -23,49 +23,35 @@ function weather_map_shortcode($atts) {
     // Output the HTML for the weather map
     ob_start();
     ?>
-    <div id="weather-map" style="width: 100%; height: 500px;"></div>
+    <div id="weather-map" style="width: 100%; height: 500px; background-color: lightgray;">
+        <p>Weather map should appear here.</p>
+    </div>
     <?php
     return ob_get_clean();
 }
-
 function fetch_weather_stations() {
     global $wpdb;
 
     // Log a message to confirm the function is being called
     error_log('fetch_weather_stations called');
 
-    // Fetch weather stations and their last weather data entry from the database
-    $table_stations = $wpdb->prefix . 'weather_stations';
-    $table_data = $wpdb->prefix . 'weather_data';
-    $stations = $wpdb->get_results("
-        SELECT 
-            ws.station_name, 
-            ws.school, 
-            ws.latitude, 
-            ws.longitude, 
-            wd.temperature, 
-            wd.humidity, 
-            wd.pressure, 
-            wd.wind_speed, 
-            wd.precipitation, 
-            wd.date_time 
-        FROM $table_stations ws
-        LEFT JOIN $table_data wd ON ws.station_id = wd.station_id
-        WHERE wd.date_time = (
-            SELECT MAX(date_time) 
-            FROM $table_data 
-            WHERE station_id = ws.station_id
-        )
+    // Fetch weather stations and their most recent data from the database
+    $results = $wpdb->get_results("
+        SELECT ws.station_id, ws.station_name, ws.latitude, ws.longitude, wd.temperature, wd.humidity, wd.pressure, wd.wind_speed, wd.date_time
+        FROM {$wpdb->prefix}weather_stations ws
+        LEFT JOIN (
+            SELECT station_id, temperature, humidity, pressure, wind_speed, MAX(date_time) as date_time
+            FROM {$wpdb->prefix}weather_data
+            GROUP BY station_id
+        ) wd ON ws.station_id = wd.station_id
     ");
 
-    // Log the fetched data for debugging
-    error_log('Fetched stations: ' . print_r($stations, true));
+    // Log the results
+    error_log('Weather stations fetched: ' . print_r($results, true));
 
-    if ($stations) {
-        error_log('Weather stations fetched successfully');
-        wp_send_json_success(array('stations' => $stations));
+    if ($results) {
+        wp_send_json_success($results);
     } else {
-        error_log('Failed to fetch weather stations');
         wp_send_json_error('Failed to fetch weather stations');
     }
 }
