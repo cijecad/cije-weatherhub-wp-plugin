@@ -84,6 +84,9 @@ function cije_weather_hub_create_tables() {
 // Include the main class for the core functionality
 require_once WEATHERHUB_PLUGIN_DIR . 'core/class-cije-weather-hub.php';
 
+// Include admin menu functions
+require_once WEATHERHUB_PLUGIN_DIR . 'admin-menu.php';
+
 // The main function to load the only instance of our master class.
 function WEATHERHUB() {
     return Cije_Weather_Hub::instance();
