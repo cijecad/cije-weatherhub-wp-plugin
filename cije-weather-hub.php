@@ -57,7 +57,7 @@ function cije_weather_hub_create_tables() {
 
     // SQL to create weather_data table
     $sql_weather_data = "CREATE TABLE $weather_data_table (
-        data_id int(11) NOT NULL AUTO_INCREMENT,
+        id int(11) NOT NULL AUTO_INCREMENT,
         station_id int(11) NOT NULL,
         date_time datetime NOT NULL,
         temperature float DEFAULT NULL,
