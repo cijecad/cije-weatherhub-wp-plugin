@@ -65,7 +65,7 @@ function cije_weather_hub_create_tables() {
         pressure float DEFAULT NULL,
         wind_speed float DEFAULT NULL,
         precipitation float DEFAULT NULL,
-        PRIMARY KEY (data_id),
+        PRIMARY KEY (id),
         FOREIGN KEY (station_id) REFERENCES $weather_stations_table(station_id) ON DELETE CASCADE
     ) $charset_collate;";
 
