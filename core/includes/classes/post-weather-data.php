@@ -1,4 +1,7 @@
 <?php
+// Set the default timezone
+date_default_timezone_set('America/Denver');
+
 // Exit if accessed directly.
 if (!defined('ABSPATH')) exit;
 
@@ -71,12 +74,24 @@ if ($station === null) {
 
 // Check the last data timestamp
 $data_table = $wpdb->prefix . 'weather_data';
-$last_entry = $wpdb->get_row($wpdb->prepare("SELECT date_time FROM $data_table WHERE station_id = %d ORDER BY date_time DESC LIMIT 1", $station_id));
+$last_entry = $wpdb->get_row(
+    $wpdb->prepare(
+        "SELECT date_time FROM $data_table WHERE station_id = %d ORDER BY date_time DESC LIMIT 1",
+        $station_id
+    )
+);
 
 if ($last_entry) {
-    $last_time = strtotime($last_entry->date_time);
-    $current_time = time();
-    if (($current_time - $last_time) < 3600) { // 3600 seconds = 1 hour
+    // Create DateTime objects in America/Denver time zone
+    $last_time = new DateTime($last_entry->date_time);
+    $current_time = new DateTime();
+
+    // Log times for debugging
+    error_log('Last entry time (America/Denver): ' . $last_time->format('Y-m-d H:i:s'));
+    error_log('Current time (America/Denver): ' . $current_time->format('Y-m-d H:i:s'));
+
+    // Compare timestamps directly
+    if (($current_time->getTimestamp() - $last_time->getTimestamp()) < 3600) {
         error_log('Post too soon');
         http_response_code(429);
         wp_send_json_error('Post too soon. Please wait an hour.');
@@ -87,11 +102,11 @@ if ($last_entry) {
 // Insert the weather data into the database
 $table_name = $wpdb->prefix . 'weather_data';
 $data = array(
-    'station_id' => $station_id,
-    'temperature' => $temperature,
-    'humidity' => $humidity,
-    'pressure' => $pressure,
-    'wind_speed' => $wind_speed,
+    'station_id'    => $station_id,
+    'temperature'   => $temperature,
+    'humidity'      => $humidity,
+    'pressure'      => $pressure,
+    'wind_speed'    => $wind_speed,
     'precipitation' => $rain_inches
 );
 $format = array('%d', '%f', '%f', '%f', '%f', '%f');

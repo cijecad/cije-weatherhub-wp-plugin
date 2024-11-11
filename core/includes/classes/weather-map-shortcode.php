@@ -37,12 +37,25 @@ function fetch_weather_stations() {
 
     // Fetch weather stations and their most recent data from the database
     $results = $wpdb->get_results("
-        SELECT ws.station_id, ws.station_name, ws.latitude, ws.longitude, wd.temperature, wd.humidity, wd.pressure, wd.wind_speed, wd.date_time
+        SELECT 
+            ws.station_id, 
+            ws.station_name, 
+            ws.latitude, 
+            ws.longitude, 
+            wd.temperature, 
+            wd.humidity, 
+            wd.pressure, 
+            wd.wind_speed, 
+            wd.date_time
         FROM {$wpdb->prefix}weather_stations ws
         LEFT JOIN (
-            SELECT station_id, temperature, humidity, pressure, wind_speed, MAX(date_time) as date_time
-            FROM {$wpdb->prefix}weather_data
-            GROUP BY station_id
+            SELECT wd1.*
+            FROM {$wpdb->prefix}weather_data wd1
+            INNER JOIN (
+                SELECT station_id, MAX(date_time) AS date_time
+                FROM {$wpdb->prefix}weather_data
+                GROUP BY station_id
+            ) wd2 ON wd1.station_id = wd2.station_id AND wd1.date_time = wd2.date_time
         ) wd ON ws.station_id = wd.station_id
     ");
 
