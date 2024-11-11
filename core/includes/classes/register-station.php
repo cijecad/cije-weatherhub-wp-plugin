@@ -124,7 +124,13 @@ function handle_register_station() {
     $message = "Thank you for registering your weather station.\n\n";
     $message .= "Station ID: $station_id\n";
     $message .= "Passkey: $passkey\n";
-    wp_mail($email, $subject, $message);
+    $headers = array('Content-Type: text/html; charset=UTF-8', 'From: Your Name <your-email@example.com>');
+
+if (wp_mail($email, $subject, $message, $headers)) {
+    error_log('Registration email sent successfully to ' . $email);
+} else {
+    error_log('Failed to send registration email to ' . $email);
+}
 
     wp_send_json_success(array('message' => 'Registration successful. Please check your email for your station ID and passkey.'));
 }
