@@ -55,11 +55,11 @@ function cije_weather_hub_create_tables() {
         PRIMARY KEY (station_id)
     ) $charset_collate;";
 
-    // SQL to create weather_data table
+    // SQL to create weather_data table with date_time auto-populating
     $sql_weather_data = "CREATE TABLE $weather_data_table (
         id int(11) NOT NULL AUTO_INCREMENT,
         station_id int(11) NOT NULL,
-        date_time datetime NOT NULL,
+        date_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
         temperature float DEFAULT NULL,
         humidity float DEFAULT NULL,
         pressure float DEFAULT NULL,
