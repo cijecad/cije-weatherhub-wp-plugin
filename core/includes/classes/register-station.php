@@ -111,27 +111,35 @@ function handle_register_station() {
         'email' => $email,
         'passkey' => $passkey
     ));
-
+    
     if ($inserted === false) {
+        error_log('Failed to register station in the database.');
         wp_send_json_error(array('message' => 'Failed to register station.'));
     }
-
+    
     // Get the station_id of the newly inserted station
     $station_id = $wpdb->insert_id;
-
+    error_log('New station registered with ID: ' . $station_id);
+    
     // Send an email to the user with their station_id and passkey
     $subject = 'Your Weather Station Registration';
     $message = "Thank you for registering your weather station.\n\n";
     $message .= "Station ID: $station_id\n";
     $message .= "Passkey: $passkey\n";
-    $headers = array('Content-Type: text/html; charset=UTF-8', 'From: Your Name <your-email@example.com>');
-
-if (wp_mail($email, $subject, $message, $headers)) {
-    error_log('Registration email sent successfully to ' . $email);
-} else {
-    error_log('Failed to send registration email to ' . $email);
-}
-
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+        'From: Christopher <cad@thecije.org>',
+        'Reply-To: cad@thecije.org'
+    );
+    
+    // Add error logging for email sending
+    error_log('Attempting to send email to ' . $email);
+    if (wp_mail($email, $subject, $message, $headers)) {
+        error_log('Registration email sent successfully to ' . $email);
+    } else {
+        error_log('Failed to send registration email to ' . $email);
+    }
+    
     wp_send_json_success(array('message' => 'Registration successful. Please check your email for your station ID and passkey.'));
 }
 
