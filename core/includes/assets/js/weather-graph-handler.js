@@ -61,43 +61,32 @@ jQuery(document).ready(function($) {
                 time_range: timeRange
             },
             success: function(response) {
-                console.log('Weather data AJAX response:', response);
-
-                if (response.success && response.data.length > 0) {
+                if (response.success) {
                     var weatherData = response.data;
-                    console.log('Fetched weather data:', weatherData);
 
                     var labels = [];
                     var values = [];
 
-                    // Process the data
-                    for (var i = 0; i < weatherData.length; i++) {
-                        var dateStr = weatherData[i].date_time;
-                        var valueStr = weatherData[i][measure];
+                    weatherData.forEach(function(point) {
+                        var date = parseDateString(point.date_time);
+                        var value = parseFloat(point[measure]);
 
-                        // Parse the date string into a Date object
-                        var dateObj = parseDateString(dateStr);
-
-                        // Parse the value into a float
-                        var valueNum = parseFloat(valueStr);
-
-                        // Add to arrays if valid
-                        if (!isNaN(dateObj.getTime()) && !isNaN(valueNum)) {
-                            labels.push(dateObj);
-                            values.push(valueNum);
+                        if (!isNaN(date.getTime()) && !isNaN(value)) {
+                            labels.push(date); // Use Date objects for labels
+                            values.push(value);
                         } else {
-                            console.warn('Invalid data point:', dateStr, valueStr);
+                            console.warn('Invalid data point:', point.date_time, point[measure]);
                         }
-                    }
+                    });
 
                     console.log('Processed Labels:', labels);
                     console.log('Processed Values:', values);
 
-                    // Display data for debugging
-                    $('#debug-output').html(
-                        '<p>Labels: ' + labels.join(', ') + '</p>' +
-                        '<p>Values: ' + values.join(', ') + '</p>'
-                    );
+                    // Remove debugging display
+                    // $('#debug-output').html(
+                    //     '<p>Labels: ' + labels.join(', ') + '</p>' +
+                    //     '<p>Values: ' + values.join(', ') + '</p>'
+                    // );
 
                     // Clear the previous chart instance if it exists
                     if (window.myChart) {
@@ -111,7 +100,7 @@ jQuery(document).ready(function($) {
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: measure,
+                                label: measure.charAt(0).toUpperCase() + measure.slice(1),
                                 data: values,
                                 borderColor: 'rgba(75, 192, 192, 1)',
                                 borderWidth: 2,
@@ -122,40 +111,40 @@ jQuery(document).ready(function($) {
                         options: {
                             responsive: true,
                             scales: {
-                                x: {
-                                    type: 'time',
+                                xAxes: [{ // For Chart.js version 2.x
+                                    type: 'time', // Set x-axis type to 'time'
                                     time: {
-                                        unit: 'day',
-                                        tooltipFormat: 'MMM dd, yyyy HH:mm:ss'
+                                        parser: 'YYYY-MM-DD HH:mm:ss', // Adjust based on your date format
+                                        tooltipFormat: 'MMM D, YYYY HH:mm',
+                                        unit: 'day', // 'hour', 'day', etc., depending on your data
+                                        displayFormats: {
+                                            day: 'MMM D', // Format for the x-axis labels
+                                        }
                                     },
-                                    title: {
+                                    scaleLabel: {
                                         display: true,
-                                        text: 'Date'
+                                        labelString: 'Date' // Label for the x-axis
+                                    },
+                                    ticks: {
+                                        source: 'data', // Ensure ticks match your data points
+                                        autoSkip: true,
+                                        maxRotation: 0,
+                                        callback: function(value, index, values) {
+                                            return moment(value).format('MMM D'); // Adjust format as needed
+                                        }
                                     }
-                                },
-                                y: {
-                                    title: {
+                                }],
+                                yAxes: [{
+                                    scaleLabel: {
                                         display: true,
-                                        text: measure
+                                        labelString: measure.charAt(0).toUpperCase() + measure.slice(1)
                                     }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: true
-                                },
-                                tooltip: {
-                                    enabled: true
-                                }
+                                }]
                             }
                         }
                     });
                 } else {
-                    console.warn('No data available for the selected time range.');
-                    $('#debug-output').html('<p>No data available for the selected time range.</p>');
-                    if (window.myChart) {
-                        window.myChart.destroy();
-                    }
+                    console.error('Failed to fetch weather data:', response.data);
                 }
             },
             error: function(error) {
@@ -164,12 +153,11 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // Add a div for debug output
-    $('<div id="debug-output"></div>').insertAfter('#weather-graph');
-
     // Event listeners for dropdown changes
-    $('#weather-station, #y-axis-measure, #time-range').change(fetchWeatherDataAndRenderGraph);
+    $('#weather-station, #y-axis-measure, #time-range').on('change', function() {
+        fetchWeatherDataAndRenderGraph();
+    });
 
-    // Initial call to render the graph with default values
+    // Initial call to render the graph
     fetchWeatherDataAndRenderGraph();
 });
